@@ -18,8 +18,10 @@ Download Link: https://github.com/jonathanjma/MeetingHelper/releases
     + General Reminder Alerts
 
 ## How to Download/Setup
-1. Download the exe file from the releases page (link above)
-2. Run the MeetingHelper.exe file (*java 8 is recommended to run)
+1. Download the MeetingHelper.zip file from the releases page (link above)
+2. Locate the downloaded .zip file and extract all the files ("Extract All" button in file explorer)
+2. Once extracted, run the MeetingHelper.exe file (*java 8 is recommended to run)
+    + If you get a warning from Windows that this is an unrecognized app, click "Run Anyways" (might be under "More Info")
     + A window should open with a default bell schedule and early open time
 3. In the options window, set your options. The correct format for each option is below:
     + Schedule: \<period#> \<startTime> (ex. 1 8:00)
