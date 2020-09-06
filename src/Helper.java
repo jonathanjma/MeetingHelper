@@ -1,130 +1,128 @@
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.util.Pair;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
 
 public class Helper {
 
-    private static HashMap<Integer, String> links;
-    private static TrayIcon trayIcon;
+    public static void main(String[] args) throws InterruptedException {
 
-    public static void main(String[] args) {
+        new Thread(() -> Application.launch(HelperUI.class), "javafx").start();
+        Thread.sleep(1000);
 
-        links = new HashMap<>();
-
-        // set up tray icon/notification stuff
+        // set up tray icon
         try {
             SystemTray tray = SystemTray.getSystemTray();
-            BufferedImage img = ImageIO.read(Helper.class.getResource("school.png"));
-            trayIcon = new TrayIcon(img, "Meeting Helper :-)");
-            trayIcon.setImageAutoSize(true);
+            BufferedImage img = ImageIO.read(Helper.class.getResource("tray.png"));
+            int trayIconWidth = tray.getTrayIconSize().width;
+            TrayIcon trayIcon = new TrayIcon(img.getScaledInstance(trayIconWidth, -1, Image.SCALE_SMOOTH),
+                    "Meeting Helper :-)");
 
             PopupMenu popup = new PopupMenu();
+            MenuItem optionsItem = new MenuItem("Options");
             MenuItem exitItem = new MenuItem("Exit");
-            popup.add(exitItem);
+            popup.add(optionsItem); popup.addSeparator(); popup.add(exitItem);
             trayIcon.setPopupMenu(popup);
 
+            optionsItem.addActionListener(e -> HelperUI.show());
+
             exitItem.addActionListener(e -> {
-                sendNotification("Exiting");
-                tray.remove(trayIcon);
+                tray.remove(trayIcon); notify("Exiting", 0);
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ex) { ex.printStackTrace(); }
                 System.exit(0);
             });
 
             tray.add(trayIcon);
         } catch (IOException | AWTException e) {
             e.printStackTrace();
-            trayIcon.displayMessage("Meeting Helper :-)", "Failed To Launch, Exiting",
-                    TrayIcon.MessageType.ERROR);
+            notify("Tray Error, Exiting", 3); Thread.sleep(3000);
             System.exit(-1);
         }
 
-        // read options
-        try (BufferedReader br = new BufferedReader(
-                new FileReader(System.getProperty("user.home")+"/helper_options.txt"))) {
-            String line;
-            int count = 1;
-            while ((line = br.readLine()) != null) {
-                links.put(count, line);
-                count++;
-            }
-            // for (int i = 1; i <= 7; i++) { System.out.println(links.get(i)); }
-        } catch (IOException e) {
-            e.printStackTrace();
-            trayIcon.displayMessage("Meeting Helper :-)",
-                    "Error: Could Not Load Options, Exiting", TrayIcon.MessageType.ERROR);
-            System.exit(-1);
-        }
+        OptionsUtil options = HelperUI.optionsUtil();
+        boolean first = true;
 
-       sendNotification("Launched Successfully");
+        /*LocalDateTime start = LocalDateTime.of(2020,8,31,7,0);
+        int count = 0;*/
 
+        //noinspection InfiniteLoopStatement
         while (true) {
-            LocalDateTime now = LocalDateTime.now();
 
+            LocalDateTime now = LocalDateTime.now(); //start.plusMinutes(count);
             DayOfWeek day = now.getDayOfWeek();
-            LocalTime time = LocalTime.of(now.getHour(), now.getMinute());
-            if (day.getValue() >= 1 && day.getValue() <= 5) {
+            //System.out.println(day.name() + " " + now);
 
-                int startPeriod = (day == DayOfWeek.WEDNESDAY || day == DayOfWeek.FRIDAY) ? 2 : 1;
+            if (day.getValue() >= 1 && day.getValue() <= 5) { // if not weekends
 
-                if (time.equals(LocalTime.of(7, 57))) {
-                    openLink(startPeriod);
-                } else if (day == DayOfWeek.MONDAY && time.equals(LocalTime.of(8, 47))) {
-                    openLink(2);
-                }
-                else if (time.equals(LocalTime.of(9, 35))) {
-                    sendNotification("Office Hours\n");
-                }
-                else if (time.equals(LocalTime.of(10, 42))) {
-                    openLink(startPeriod+2);
-                } else if (day == DayOfWeek.MONDAY && time.equals(LocalTime.of(11, 32))) {
-                    openLink(4);
-                }
-                else if (time.equals(LocalTime.of(12, 20))) {
-                    sendNotification("Lunch\n");
-                }
-                else if (time.equals(LocalTime.of(12, 52))) {
-                    openLink(startPeriod+4);
-                } else if (day == DayOfWeek.MONDAY && time.equals(LocalTime.of(13, 42))) {
-                    openLink(6);
-                }
+                // add open early time
+                LocalTime time = LocalTime.of(now.getHour(), now.getMinute()).plusMinutes(options.earlyMin);
 
-                if (day == DayOfWeek.TUESDAY || day == DayOfWeek.THURSDAY) {
-                    if (time.equals(LocalTime.of(14, 57))) {
-                        openLink(7);
-                    }
-                    else if (time.equals(LocalTime.of(17, 0))) {
-                        sendNotification("School Over\n");
-                    }
-                } else {
-                    if (time.equals(LocalTime.of(14, 30))) {
-                        sendNotification("School Over\n");
+                // check schedule to check if time to open link
+                for (Pair<Integer, LocalTime> periodStart : options.schedule.get(day.getValue()-1)) {
+
+                    if (time.equals(periodStart.getValue())) {
+
+                        boolean hasAlt = false;
+                        // check if period has alternate link today
+                        for (Triplet<Integer, DayOfWeek, String> altLink : options.altLinks) {
+                            if (periodStart.getKey().equals(altLink.getV1()) && altLink.getV2().equals(day)) {
+                                hasAlt = true;
+                                openLink(altLink.getV3());
+                                notify("Opening Period " + periodStart.getKey() + " Alt Link", 0);
+                                System.out.println("Period " + periodStart.getKey() + " alt opened\n");
+                            }
+                        }
+
+                        // if no alternate link use default
+                        if (!hasAlt) {
+                            try {
+                                openLink(options.links.get(periodStart.getKey() - 1));
+                                notify("Opening Period " + periodStart.getKey() + " Link", 0);
+                                System.out.println("Period " + periodStart.getKey() + " opened\n");
+                            } catch (IndexOutOfBoundsException e) {
+                                notify("Error: Could not open scheduled period link, check options", 3);
+                            }
+                        }
                     }
                 }
+
+                // check if time to show alert
+                for (Triplet<DayOfWeek, LocalTime, String> alert : options.alerts) {
+                    if (alert.getV1().equals(day) && alert.getV2().equals(time.minusMinutes(options.earlyMin))) {
+                        notify(alert.getV3(), 0);
+                        System.out.println("Alert: " + alert.getV3() + "\n");
+                    }
+                }
+
+                /*if (time.equals(LocalTime.of(15,0))) {count+=960;}
+                Thread.sleep(125);
+                count++;*/
             }
 
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException e) { e.printStackTrace(); }
+            if (first) { notify("Launched Successfully", 0); first = false;}
+
+            Thread.sleep(60000);
         }
     }
 
-    public static void openLink(int pd) {
+    public static void openLink(String url) {
         try {
-            Desktop.getDesktop().browse(new URI(links.get(pd)));
-            sendNotification("Opening Period " + pd + " Link");
-            System.out.println("Period " + pd + " opened\n");
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-        }
+            Desktop.getDesktop().browse(new URI(url));
+        } catch (IOException | URISyntaxException e) { e.printStackTrace(); }
     }
 
-    public static void sendNotification(String text) {
-        trayIcon.displayMessage("Meeting Helper :-)", text, TrayIcon.MessageType.INFO);
+    public static void notify(String text, int level) {
+        Platform.runLater(() -> HelperUI.notify(text, level));
     }
 }
