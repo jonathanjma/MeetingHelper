@@ -1,3 +1,6 @@
 {
-  "version": 3.0
+  "data":  {
+    "name": "MeetingHelper",
+    "version": 3.0
+  }
 }
