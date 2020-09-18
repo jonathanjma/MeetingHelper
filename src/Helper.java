@@ -1,10 +1,9 @@
-import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -12,52 +11,68 @@ import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+@SuppressWarnings("InfiniteLoopStatement")
 public class Helper {
+
+    private static TrayIcon trayIcon;
+    public final static String path = System.getProperty("user.home")+"/helper_options.xml";
+    public final static double version = 3.0;
 
     public static void main(String[] args) throws InterruptedException {
 
-        new Thread(() -> Application.launch(HelperUI.class), "javafx").start();
-        Thread.sleep(1000);
+        HelperUILauncher.launchProcess("options");
 
         // set up tray icon
         try {
             SystemTray tray = SystemTray.getSystemTray();
-            BufferedImage img = ImageIO.read(Helper.class.getResource("tray.png"));
-            int trayIconWidth = tray.getTrayIconSize().width;
-            TrayIcon trayIcon = new TrayIcon(img.getScaledInstance(trayIconWidth, -1, Image.SCALE_SMOOTH),
+            BufferedImage img = ImageIO.read(Helper.class.getResource("res/tray.png"));
+            trayIcon = new TrayIcon(
+                    img.getScaledInstance(tray.getTrayIconSize().width, -1, Image.SCALE_SMOOTH),
                     "Meeting Helper :-)");
 
             PopupMenu popup = new PopupMenu();
+            MenuItem todayItem = new MenuItem("Today View");
             MenuItem optionsItem = new MenuItem("Options");
+            MenuItem aboutItem = new MenuItem("About");
             MenuItem exitItem = new MenuItem("Exit");
-            popup.add(optionsItem); popup.addSeparator(); popup.add(exitItem);
+            popup.add(todayItem); popup.add(optionsItem); popup.add(aboutItem);
+            popup.addSeparator(); popup.add(exitItem);
             trayIcon.setPopupMenu(popup);
 
-            optionsItem.addActionListener(e -> HelperUI.show());
+            todayItem.addActionListener(e -> HelperUILauncher.launchProcess("today"));
+            optionsItem.addActionListener(e -> HelperUILauncher.launchProcess("options"));
+            aboutItem.addActionListener(e -> HelperUILauncher.launchProcess("about"));
 
             exitItem.addActionListener(e -> {
-                tray.remove(trayIcon); notify("Exiting", 0);
+                notify("Exiting", 1);
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ex) { ex.printStackTrace(); }
-                System.exit(0);
+                tray.remove(trayIcon); System.exit(0);
             });
 
             tray.add(trayIcon);
-        } catch (IOException | AWTException e) {
-            e.printStackTrace();
+        } catch (IOException | AWTException ex) {
+            ex.printStackTrace();
             notify("Tray Error, Exiting", 3); Thread.sleep(3000);
             System.exit(-1);
         }
 
-        OptionsUtil options = HelperUI.optionsUtil();
-        boolean first = true;
+        OptionsUtil options = new OptionsUtil();
+        try {
+            if (!new File(Helper.path).exists()) { options.createOptions(); }
+        } catch (IOException ex) { ex.printStackTrace(); }
 
         /*LocalDateTime start = LocalDateTime.of(2020,8,31,7,0);
         int count = 0;*/
 
-        //noinspection InfiniteLoopStatement
+        boolean first = true;
         while (true) {
+
+            // load options as options could have been changed
+            try {
+                options.updateOptionsVars();
+            } catch (Exception ex) { ex.printStackTrace(); }
 
             LocalDateTime now = LocalDateTime.now(); //start.plusMinutes(count);
             DayOfWeek day = now.getDayOfWeek();
@@ -79,7 +94,7 @@ public class Helper {
                             if (periodStart.getKey().equals(altLink.getV1()) && altLink.getV2().equals(day)) {
                                 hasAlt = true;
                                 openLink(altLink.getV3());
-                                notify("Opening Period " + periodStart.getKey() + " Alt Link", 0);
+                                notify("Opening Period " + periodStart.getKey() + " Alt Link", 1);
                                 System.out.println("Period " + periodStart.getKey() + " alt opened\n");
                             }
                         }
@@ -88,10 +103,10 @@ public class Helper {
                         if (!hasAlt) {
                             try {
                                 openLink(options.links.get(periodStart.getKey() - 1));
-                                notify("Opening Period " + periodStart.getKey() + " Link", 0);
+                                notify("Opening Period " + periodStart.getKey() + " Link", 1);
                                 System.out.println("Period " + periodStart.getKey() + " opened\n");
                             } catch (IndexOutOfBoundsException e) {
-                                notify("Error: Could not open scheduled period link, check options", 3);
+                                notify("Error: Could not open period link, check options", 3);
                             }
                         }
                     }
@@ -100,19 +115,21 @@ public class Helper {
                 // check if time to show alert
                 for (Triplet<DayOfWeek, LocalTime, String> alert : options.alerts) {
                     if (alert.getV1().equals(day) && alert.getV2().equals(time.minusMinutes(options.earlyMin))) {
-                        notify(alert.getV3(), 0);
+                        notify(alert.getV3(), 1);
                         System.out.println("Alert: " + alert.getV3() + "\n");
                     }
                 }
 
                 /*if (time.equals(LocalTime.of(15,0))) {count+=960;}
-                Thread.sleep(125);
-                count++;*/
+                Thread.sleep(125); count++;*/
             }
 
-            if (first) { notify("Launched Successfully", 0); first = false;}
-
-            Thread.sleep(60000);
+            if (!first) {
+                Thread.sleep(60000);
+            } else {
+                notify("Launched Successfully", 1); first = false;
+                Thread.sleep(60000 - now.getSecond()*1000); // line up sleep with beginning of minute
+            }
         }
     }
 
@@ -123,6 +140,13 @@ public class Helper {
     }
 
     public static void notify(String text, int level) {
-        Platform.runLater(() -> HelperUI.notify(text, level));
+        TrayIcon.MessageType type = TrayIcon.MessageType.NONE;
+        switch (level) {
+            case 0: type = TrayIcon.MessageType.NONE; break;
+            case 1: type = TrayIcon.MessageType.INFO; break;
+            case 2: type = TrayIcon.MessageType.WARNING; break;
+            case 3: type = TrayIcon.MessageType.ERROR; break;
+        }
+        trayIcon.displayMessage("Meeting Helper :-)", text, type);
     }
 }

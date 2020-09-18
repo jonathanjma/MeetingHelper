@@ -25,12 +25,12 @@ public class OptionsUtil {
     public ArrayList<Triplet<DayOfWeek, LocalTime, String>> alerts = new ArrayList<>();
 
     // update option variables only
-    public void updateOptionsVars(ArrayList<TextInputControl> options) {
+    public void updateOptionsVars() {
         schedule.clear(); links.clear(); altLinks.clear(); alerts.clear();
 
         // schedule
         for (int i = 0; i < 5; i++) {
-            String[] arr = options.get(i).getText().split("\n");
+            String[] arr = getElement(i).split("\n");
             ArrayList<Pair<Integer, LocalTime>> day = new ArrayList<>();
             for (String str : arr) {
                 String[] split = str.split(" ");
@@ -41,14 +41,14 @@ public class OptionsUtil {
             schedule.add(day);
         }
         // links
-        String[] arr1 = options.get(5).getText().split("\n");
+        String[] arr1 = getElement(5).split("\n");
         if (arr1[0].length() != 0) {
-            links.addAll(Arrays.asList(options.get(5).getText().split("\n")));
+            links.addAll(Arrays.asList(getElement(5).split("\n")));
         } else { // throw error if no links
             throw new RuntimeException("no links");
         }
         // alt links
-        String[] arr2 = options.get(6).getText().split("\n");
+        String[] arr2 = getElement(6).split("\n");
         if (arr2[0].length() != 0) {
             for (String str : arr2) {
                 String[] split = str.split(" ");
@@ -57,9 +57,9 @@ public class OptionsUtil {
             }
         }
         // open before time
-        earlyMin = Integer.parseInt(options.get(7).getText());
+        earlyMin = Integer.parseInt(getElement(7));
         // alerts
-        String[] arr3 = options.get(8).getText().split("\n");
+        String[] arr3 = getElement(8).split("\n");
         if (arr3[0].length() != 0) {
             for (String str : arr3) {
                 String[] split = str.split(" ");
@@ -73,25 +73,47 @@ public class OptionsUtil {
         System.out.println(schedule + "\n" + links + "\n" + altLinks + "\n" + earlyMin + "\n" + alerts);
     }
 
+    // get number of periods in schedule
+    public int linkCheck() {
+        int maxPeriod = 0;
+        for (ArrayList<Pair<Integer, LocalTime>> list : schedule) {
+            for (Pair<Integer, LocalTime> info : list) {
+                if (info.getKey() > maxPeriod) {
+                    maxPeriod = info.getKey();
+                }
+            }
+        }
+        return maxPeriod;
+    }
+
     // write to options file only
-    public void writeOptions(ArrayList<TextInputControl> options) throws JDOMException, IOException {
-        Document document = new SAXBuilder().build(new File(HelperUI.path));
+    public void writeOptions(ArrayList<TextInputControl> options)
+            throws JDOMException, IOException {
+        Document document = new SAXBuilder().build(new File(Helper.path));
         for (int i = 0; i < options.size(); i++) {
             document.getRootElement().getChildren().get(i).setText(options.get(i).getText());
         }
         XMLOutputter output = new XMLOutputter(Format.getPrettyFormat());
-        output.output(document, new FileOutputStream(HelperUI.path));
+        output.output(document, new FileOutputStream(Helper.path));
     }
 
     // fill input boxes with options file content
-    public static void fillOptionsText(ArrayList<TextInputControl> options)
+    public void fillOptionsText(ArrayList<TextInputControl> options)
             throws JDOMException, IOException {
-        Document document = new SAXBuilder().build(new File(HelperUI.path));
+        Document document = new SAXBuilder().build(new File(Helper.path));
         for (int i = 0; i < options.size(); i++) {
             options.get(i).setText(document.getRootElement().getChildren().get(i).getText());
         }
-        XMLOutputter output = new XMLOutputter(Format.getPrettyFormat());
-        output.output(document, new FileOutputStream(HelperUI.path));
+    }
+
+    // get individual option
+    public String getElement(int i) {
+        try {
+            return new SAXBuilder().build(new File(Helper.path))
+                    .getRootElement().getChildren().get(i).getText();
+        } catch (IOException | JDOMException e) {
+            e.printStackTrace(); throw new RuntimeException();
+        }
     }
 
     // create new options file
@@ -107,7 +129,9 @@ public class OptionsUtil {
             }
             document.getRootElement().addContent(day);
         }
-        Element links = new Element("links"); links.setText("zoom.us/test");
+        Element links = new Element("links");
+        String txt = ""; for (int i = 0; i < 6; i++) { txt += "https://zoom.us/test\n"; }
+        links.setText(txt);
         document.getRootElement().addContent(links);
         Element altLinks = new Element("altLinks");
         document.getRootElement().addContent(altLinks);
@@ -115,8 +139,10 @@ public class OptionsUtil {
         document.getRootElement().addContent(earlyOpen);
         Element otherAlerts = new Element("otherAlerts");
         document.getRootElement().addContent(otherAlerts);
+        Element otherLinks = new Element("otherLinks");
+        document.getRootElement().addContent(otherLinks);
 
         XMLOutputter output = new XMLOutputter(Format.getPrettyFormat());
-        output.output(document, new FileOutputStream(HelperUI.path));
+        output.output(document, new FileOutputStream(Helper.path));
     }
 }
