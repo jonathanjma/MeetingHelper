@@ -280,9 +280,9 @@ public class HelperUI extends Application {
                 System.out.println("Latest Version: " + latestVersion);
                 if (latestVersion > Helper.version) {
                     checkResult.setText("Version " + latestVersion + " is available, download at " +
-                            "[https://github.com/jonathanjma/MeetingHelper/releases]");
+                            "[https://github.com/jonathanjma/MeetingHelper/releases/latest]");
                     checkResult.setOnAction(e2 -> getHostServices()
-                            .showDocument("https://github.com/jonathanjma/MeetingHelper/releases"));
+                            .showDocument("https://github.com/jonathanjma/MeetingHelper/releases/latest"));
                 } else {
                     checkResult.setText("You are using the latest version");
                 }
