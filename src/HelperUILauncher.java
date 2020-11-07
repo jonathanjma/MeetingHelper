@@ -15,7 +15,7 @@ public class HelperUILauncher {
     }
 
     public static void launchProcess(String ... args) {
-        System.out.println("launch 🚀");
+        System.out.println("gui launch 🚀");
         ArrayList<String> commands = new ArrayList<>(Arrays.asList(
                 Paths.get(getProperty("java.home"), "bin", "java").toString(),
                 "-Xms10M", "-Xmx100M", "-XX:+UseG1GC",

@@ -20,7 +20,10 @@ Download Link: https://github.com/jonathanjma/MeetingHelper/releases/latest
 
 ## Setup Instructions
 1. If you __have Java 8__ installed, download MeetingHelper.zip from the [releases page](https://github.com/jonathanjma/MeetingHelper/releases/latest)
-    + If you __don't__ have Java 8, download MeetingHelperBundled.zip (adds java libraries)
+    + This was tested using Java 8, but any Java version > 8 should work
+    + If you __don't__ have Java installed, download MeetingHelperBundled.zip (adds java libraries)
+        + Or download and install the appropriate [Java 8 JRE](https://www.oracle.com/java/technologies/javase-jre8-downloads.html) for your computer
+    + Another note- the .exe file will only run on Windows as MacOS and Linux do not support it
 2. Locate the downloaded .zip file and extract all the files ("Extract All" button in file explorer)
 3. Once extracted, run the MeetingHelper.exe file
     + If you get a warning from Windows that this is an unrecognized app, click "Run Anyways" (might be under "More Info")
@@ -43,6 +46,9 @@ Download Link: https://github.com/jonathanjma/MeetingHelper/releases/latest
     + Enjoy :-)
 
 ## Version History
+
+#### v3.1
++ Minor bug fixes
 
 #### v3.0
 + Added today and about view

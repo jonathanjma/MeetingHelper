@@ -32,14 +32,17 @@ public class OptionsUtil {
         for (int i = 0; i < 5; i++) {
             String[] arr = getElement(i).split("\n");
             ArrayList<Pair<Integer, LocalTime>> day = new ArrayList<>();
-            for (String str : arr) {
-                String[] split = str.split(" ");
-                day.add(new Pair<>(Integer.parseInt(split[0]),
-                        LocalTime.of(Integer.parseInt(split[1].split(":")[0]),
-                                     Integer.parseInt(str.split(":")[1]))));
+            if (arr[0].length() != 0) {
+                for (String str : arr) {
+                    String[] split = str.split(" ");
+                    day.add(new Pair<>(Integer.parseInt(split[0]),
+                            LocalTime.of(Integer.parseInt(split[1].split(":")[0]),
+                                    Integer.parseInt(str.split(":")[1]))));
+                }
             }
             schedule.add(day);
         }
+
         // links
         String[] arr1 = getElement(5).split("\n");
         if (arr1[0].length() != 0) {
@@ -47,6 +50,7 @@ public class OptionsUtil {
         } else { // throw error if no links
             throw new RuntimeException("no links");
         }
+
         // alt links
         String[] arr2 = getElement(6).split("\n");
         if (arr2[0].length() != 0) {
@@ -56,8 +60,10 @@ public class OptionsUtil {
                         DayOfWeek.valueOf(split[1].toUpperCase()), split[2]));
             }
         }
+
         // open before time
         earlyMin = Integer.parseInt(getElement(7));
+
         // alerts
         String[] arr3 = getElement(8).split("\n");
         if (arr3[0].length() != 0) {

@@ -16,10 +16,11 @@ public class Helper {
 
     private static TrayIcon trayIcon;
     public final static String path = System.getProperty("user.home")+"/helper_options.xml";
-    public final static double version = 3.0;
+    public final static double version = 3.1;
 
     public static void main(String[] args) throws InterruptedException {
 
+        System.out.println("Starting MeetingHelper v" + version);
         HelperUILauncher.launchProcess("options");
 
         // set up tray icon
@@ -59,6 +60,7 @@ public class Helper {
         }
 
         OptionsUtil options = new OptionsUtil();
+        // create options file if it does not exist
         try {
             if (!new File(Helper.path).exists()) { options.createOptions(); }
         } catch (IOException ex) { ex.printStackTrace(); }
@@ -124,12 +126,12 @@ public class Helper {
                 Thread.sleep(125); count++;*/
             }
 
-            if (!first) {
-                Thread.sleep(60000);
-            } else {
+            if (first) {
                 notify("Launched Successfully", 1); first = false;
-                Thread.sleep(60000 - now.getSecond()*1000); // line up sleep with beginning of minute
             }
+
+            // line up sleep with beginning of minute
+            Thread.sleep(60000 - now.getSecond()*1000);
         }
     }
 
