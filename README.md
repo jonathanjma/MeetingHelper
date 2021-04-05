@@ -41,14 +41,14 @@ Download Link: https://github.com/jonathanjma/MeetingHelper/releases/latest
 7. If you click on the "Today" tab, you should see your schedule and alerts for today
     + You can also manually open meeting links by clicking the buttons below the "All Links" header or by clicking the button next to each period
 8. That's it!
-    + To open or exit the app, just click the tray icon (has a picture of a clock) 
-    at the bottom right of your screen next to the system icons (battery, Wi-Fi, etc).
+    + To open or exit the app, click the tray icon (the one with a clock on it) at the bottom right of your screen next to the system icons (battery, Wi-Fi, etc)
+    + Clicking once opens a menu while double clicking opens the today view by default
     + Enjoy :-)
 
 ## Version History
 
 #### v3.1
-+ Minor bug fixes
++ Tray icon and other minor bug fixes
 
 #### v3.0
 + Added today and about view

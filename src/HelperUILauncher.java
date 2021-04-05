@@ -18,7 +18,7 @@ public class HelperUILauncher {
         System.out.println("gui launch 🚀");
         ArrayList<String> commands = new ArrayList<>(Arrays.asList(
                 Paths.get(getProperty("java.home"), "bin", "java").toString(),
-                "-Xms10M", "-Xmx100M", "-XX:+UseG1GC",
+                "-Xms10M", "-Xmx100M", "-Dglass.win.minHiDPI=1",
                 "-classpath", getProperty("java.class.path"), HelperUILauncher.class.getName()));
         commands.addAll(Arrays.asList(args));
         try {

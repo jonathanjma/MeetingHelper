@@ -2,6 +2,8 @@ import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -38,18 +40,36 @@ public class Helper {
             MenuItem exitItem = new MenuItem("Exit");
             popup.add(todayItem); popup.add(optionsItem); popup.add(aboutItem);
             popup.addSeparator(); popup.add(exitItem);
-            trayIcon.setPopupMenu(popup);
 
             todayItem.addActionListener(e -> HelperUILauncher.launchProcess("today"));
             optionsItem.addActionListener(e -> HelperUILauncher.launchProcess("options"));
             aboutItem.addActionListener(e -> HelperUILauncher.launchProcess("about"));
-
             exitItem.addActionListener(e -> {
                 notify("Exiting", 1);
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ex) { ex.printStackTrace(); }
                 tray.remove(trayIcon); System.exit(0);
+            });
+            trayIcon.setPopupMenu(popup);
+
+            // alternate ways of opening menu/ui if right click does not work
+            Frame frame = new Frame("");
+            frame.setUndecorated(true);
+            frame.setType(Window.Type.UTILITY);
+            frame.setResizable(false);
+            frame.setVisible(true);
+
+            trayIcon.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 1) {
+                        frame.add(popup);
+                        popup.show(frame, e.getXOnScreen(), e.getYOnScreen());
+                    }
+                    if (e.getClickCount() >= 2) {
+                        HelperUILauncher.launchProcess("today");
+                    }
+                }
             });
 
             tray.add(trayIcon);
@@ -60,13 +80,11 @@ public class Helper {
         }
 
         OptionsUtil options = new OptionsUtil();
+
         // create options file if it does not exist
         try {
             if (!new File(Helper.path).exists()) { options.createOptions(); }
         } catch (IOException ex) { ex.printStackTrace(); }
-
-        /*LocalDateTime start = LocalDateTime.of(2020,8,31,7,0);
-        int count = 0;*/
 
         boolean first = true;
         while (true) {
@@ -76,11 +94,11 @@ public class Helper {
                 options.updateOptionsVars();
             } catch (Exception ex) { ex.printStackTrace(); }
 
-            LocalDateTime now = LocalDateTime.now(); //start.plusMinutes(count);
+            LocalDateTime now = LocalDateTime.now();
             DayOfWeek day = now.getDayOfWeek();
-            //System.out.println(day.name() + " " + now);
 
-            if (day.getValue() >= 1 && day.getValue() <= 5) { // if not weekends
+            // if not weekends
+            if (day.getValue() >= 1 && day.getValue() <= 5) {
 
                 // add open early time
                 LocalTime time = LocalTime.of(now.getHour(), now.getMinute()).plusMinutes(options.earlyMin);
@@ -121,9 +139,6 @@ public class Helper {
                         System.out.println("Alert: " + alert.getV3() + "\n");
                     }
                 }
-
-                /*if (time.equals(LocalTime.of(15,0))) {count+=960;}
-                Thread.sleep(125); count++;*/
             }
 
             if (first) {

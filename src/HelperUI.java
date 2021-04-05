@@ -46,7 +46,8 @@ public class HelperUI extends Application {
     public void start(Stage primaryStage) {
 
         optionsUtil = new OptionsUtil();
-        // start tray icon for notifications
+
+        // add tray icon for notifications
         try {
             BufferedImage img = ImageIO.read(Helper.class.getResource("res/cog.png"));
             trayIcon = new TrayIcon(
