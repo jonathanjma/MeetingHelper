@@ -2,5 +2,5 @@
 out
 *.iml
 src/META-INF
-options_backup.xml
+*.xml
 build/
